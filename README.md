@@ -22,7 +22,7 @@ other contracts ── is_attested(address, kind) / is_attested_subject(address,
 ## Live deployment
 
 App: https://attest.cristhedev.com (look up any address, request, recheck, revoke; source in [`app/`](app/))  
-Testnet Bradbury (chainId 4221): _not deployed yet_
+Testnet Bradbury (chainId 4221): [`0xBaF520A20D141A9b3015082efDf8D4758bE0962c`](https://explorer-bradbury.genlayer.com/address/0xBaF520A20D141A9b3015082efDf8D4758bE0962c)
 
 ## Kinds
 
