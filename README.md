@@ -33,7 +33,7 @@ and every transaction carries a fee deposit (`estimateTransactionFees`; the unus
 `node tests/integration/bradbury.mjs build/attest.py` on Testnet Bradbury (Phase 2), 2026-10-27,
 against the demo page https://attest.cristhedev.com/demo/profile.html, the domain
 attest.cristhedev.com and this repository (all carry GL_PK0's tag; GL_PK1's does not appear anywhere).
-All 22 checks passed.
+Every check passed. The run was finished in parts: after the github_repo leader timeouts below, that step and the unreachable-source step were sent again on their own.
 
 | Step | Tx | Result | Checked |
 |---|---|---|---|
