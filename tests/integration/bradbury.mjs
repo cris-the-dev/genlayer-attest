@@ -27,16 +27,29 @@ const fees = async (c) => {
   const e = await c.estimateTransactionFees({});
   return { distribution: e.distribution, feeValue: e.feeValue };
 };
-const wait = (c, hash) => c.waitForTransactionReceipt({ hash, waitUntil: "decided", interval: 5000, retries: 240 });
+// The public RPC drops connections now and then; retry the wait, never the write.
+async function wait(c, hash) {
+  for (let i = 0; ; i++) {
+    try {
+      return await c.waitForTransactionReceipt({ hash, waitUntil: "decided", interval: 5000, retries: 240 });
+    } catch (e) {
+      if (i >= 5 || !/fetch failed|ECONNRESET|timed out/i.test(String(e?.details ?? e?.message))) throw e;
+      await new Promise((r) => setTimeout(r, 10000));
+    }
+  }
+}
 const check = (ok, what) => {
   console.log(ok ? "  ok  " : "  FAIL", what);
   if (!ok) process.exit(1);
 };
+// A leader timeout (NOT_VOTED) executed nothing, so sending the call again is safe.
 async function tx(c, label, address, functionName, args) {
-  const hash = await c.writeContract({ address, functionName, args, value: 0n, fees: await fees(c) });
-  const r = await wait(c, hash);
-  console.log(`${label}: ${hash} ${r.txExecutionResultName}`);
-  return r;
+  for (let i = 0; ; i++) {
+    const hash = await c.writeContract({ address, functionName, args, value: 0n, fees: await fees(c) });
+    const r = await wait(c, hash);
+    console.log(`${label}: ${hash} ${r.txExecutionResultName}`);
+    if (r.txExecutionResultName !== "NOT_VOTED" || i >= 2) return r;
+  }
 }
 const read = (functionName, args) => c0.readContract({ address, functionName, args });
 

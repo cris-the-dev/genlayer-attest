@@ -31,17 +31,26 @@ and every transaction carries a fee deposit (`estimateTransactionFees`; the unus
 ## Bradbury evidence
 
 `node tests/integration/bradbury.mjs build/attest.py` on Testnet Bradbury (Phase 2), 2026-10-27,
-against https://attest.cristhedev.com/demo/profile.html (carries GL_PK0's tag). All 16 checks passed.
+against the demo page https://attest.cristhedev.com/demo/profile.html, the domain
+attest.cristhedev.com and this repository (all carry GL_PK0's tag; GL_PK1's does not appear anywhere).
+All 22 checks passed.
 
 | Step | Tx | Result | Checked |
 |---|---|---|---|
 | deploy (packed `build/attest.py`, 5.1 KB) | [`0x2184baa5…`](https://scan.testnet-chain.genlayer.com/tx/0x2184baa5f7b8c4f72e61434f0336053ebf9e4afaf736b5d20481719dc8af8386) | FINISHED_WITH_RETURN | contract `0x0557…223D` |
-| `request` web, subject `http://…` | [`0x94a18ae5…`](https://scan.testnet-chain.genlayer.com/tx/0x94a18ae5fb2a85c0750ef85c4349b3e1fe037deee35b3db211afc76df9ab6f1e) | FINISHED_WITH_ERROR | plain http refused |
-| `request` web by holder (GL_PK0) on the demo page | [`0xe7f16ba2…`](https://scan.testnet-chain.genlayer.com/tx/0xe7f16ba2c021bc6ad66dee670a463325c96be18d6dd853843b69962f36fa1839) | FINISHED_WITH_RETURN | attestation 0 ACTIVE; `is_attested(holder, web)` true |
-| `request` web by another address (GL_PK1), same page | [`0xfc0728cf…`](https://scan.testnet-chain.genlayer.com/tx/0xfc0728cf469ee9ac7fe397706ee75c245cea693d794ded1a908d3c07abe75281) | FINISHED_WITH_RETURN | attestation 1 REJECTED `ownership_tag_missing`; `is_attested` false |
-| `recheck(0)` by GL_PK1 | [`0xaa1a03d1…`](https://scan.testnet-chain.genlayer.com/tx/0xaa1a03d1e34a76d9c43e1563b70f5999c44be5b2473db2ff76c03e167a3aa4b2) | FINISHED_WITH_RETURN | unchanged source, stays ACTIVE |
-| `revoke(0)` by GL_PK1 | [`0x3b19cec4…`](https://scan.testnet-chain.genlayer.com/tx/0x3b19cec4e8f78a7c7807615371d08f321f056f0b111bc3eac51f01271e882749) | FINISHED_WITH_ERROR | only the holder can revoke |
-| `revoke(0)` by holder | [`0x1a97ba0f…`](https://scan.testnet-chain.genlayer.com/tx/0x1a97ba0f956672768cba3a0593226f9a177c9d37c42ef35e471104d53be76252) | FINISHED_WITH_RETURN | REVOKED; `is_attested` false |
+| `request` web, subject `http://…` | [`0xa4e94e1e…`](https://scan.testnet-chain.genlayer.com/tx/0xa4e94e1e0b044db32e92e1a2bacdbca3dc329ff3651322c01bfbfa8d5f6d6603) | FINISHED_WITH_ERROR | plain http refused |
+| `request` web by holder (GL_PK0) on the demo page | [`0x3dbd3171…`](https://scan.testnet-chain.genlayer.com/tx/0x3dbd3171927a5d9081693d8b796dfcf2793b7b4122fc2fb2987ef835ad6245a2) | FINISHED_WITH_RETURN | attestation 3 ACTIVE, the earlier one SUPERSEDED; `is_attested(holder, web)` true |
+| `request` web by another address (GL_PK1), same page | [`0x26846ecb…`](https://scan.testnet-chain.genlayer.com/tx/0x26846ecb424298827776f61a1cccc260d4ae1e57948837da82c34f474e380c8d) | FINISHED_WITH_RETURN | attestation 4 REJECTED `ownership_tag_missing`; `is_attested` false |
+| `recheck(3)` by GL_PK1 | [`0x8f58f06a…`](https://scan.testnet-chain.genlayer.com/tx/0x8f58f06af18fe89cbadad2b8fc2e8a2dd2218e5711403bee89d5a93ad2a7c00f) | FINISHED_WITH_RETURN | unchanged source, stays ACTIVE |
+| `revoke(3)` by GL_PK1 | [`0x4e06faad…`](https://scan.testnet-chain.genlayer.com/tx/0x4e06faadd58c8d6152fb23a1c6f95dc6e47d844c094c468e604da46b282a34e5) | FINISHED_WITH_ERROR | only the holder can revoke |
+| `revoke(3)` by holder | [`0xd40d237d…`](https://scan.testnet-chain.genlayer.com/tx/0xd40d237d168b358a90a204a6bd422ac0cf04dfdf5d08b996d4c7fc8853edb30d) | FINISHED_WITH_RETURN | REVOKED; `is_attested` false |
+| `request` domain `attest.cristhedev.com` | [`0xf166c840…`](https://scan.testnet-chain.genlayer.com/tx/0xf166c84087031537d2284dbb1a6d4abe26baa703fddbbba602dda1fdae57691e) | FINISHED_WITH_RETURN | attestation 5 ACTIVE (no LLM); `is_attested_subject` true |
+| `request` github_repo `cris-the-dev/genlayer-attest` | [`0x84106f75…`](https://scan.testnet-chain.genlayer.com/tx/0x84106f755740301d7a86d04333fc68c4130fef95f043f72c8d987554ea37818b) | FINISHED_WITH_RETURN | attestation 9 ACTIVE: API returns the repo, `.genlayer-attest` holds the tag, validators judge the README; `is_attested(holder, github_repo)` true |
+| `request` domain `attest-nowhere.invalid` | [`0xe6765ffb…`](https://scan.testnet-chain.genlayer.com/tx/0xe6765ffb70c17bc1ca8cae61a83329f1da9ac05c1a32a1a12f6056c9410bc5f1) | FINISHED_WITH_ERROR | unreachable source reverts; nothing recorded |
+
+The first two github_repo requests ended `LEADER_TIMEOUT` with no votes (`0x39dca77d…`, `0x93f5954e…`);
+nothing was recorded, and the script now sends a call again after a leader timeout. Attestations 6–8
+were one-off diagnostics while chasing that timeout, revoked by the holder afterwards.
 
 ## Kinds
 
