@@ -1,4 +1,5 @@
-# { "Depends": "py-genlayer:1jb45aa8ynh2a9c9xn3b7qqh8sm5q93hwfp7jqmwsfhh8jpz09h6" }
+# v0.3.0
+# { "Depends": "py-genlayer:babwp9t37jw9g4j2bccgn14g6x7x9s1f7dsmh7emvz735pz4zxa0" }
 """
 Attest — non-transferable, expiring attestations backed by a public source.
 
@@ -33,7 +34,9 @@ import re
 from dataclasses import dataclass
 from datetime import datetime, timezone
 
-from genlayer import *
+import genlayer as gl
+from genlayer.storage import DynArray, TreeMap, allow as allow_storage
+from genlayer.types import *
 
 ERR_EXPECTED = "[EXPECTED]"
 ERR_EXTERNAL = "[EXTERNAL]"
@@ -74,12 +77,12 @@ class Attestation:
 
 
 # Indexed args are declared alphabetically: the SDK binds them in sorted order.
-class AttestationChanged(gl.Event):
+class AttestationChanged(gl.chain.Event):
     def __init__(self, attestation_id: u256, holder: Address, /, **blob): ...
 
 
 def _now() -> int:
-    return int(datetime.now(timezone.utc).timestamp())
+    return int(datetime.fromisoformat(gl.message.raw["datetime"].replace("Z", "+00:00")).timestamp())
 
 
 def _fence(text: str) -> str:
@@ -204,21 +207,22 @@ def _validate(p: dict, leader_result) -> bool:
 
 
 def _agree_on_error(leader_result, p: dict) -> bool:
-    msg = getattr(leader_result, "message", "")
+    msg = str(getattr(leader_result, "data", getattr(leader_result, "message", "")))
     try:
         _check(p)
         return False
     except gl.vm.UserError as e:
-        if e.message.startswith(ERR_EXPECTED) or e.message.startswith(ERR_EXTERNAL):
-            return e.message == msg
-        if e.message.startswith(ERR_TRANSIENT):
+        m = str(e.data)
+        if m.startswith(ERR_EXPECTED) or m.startswith(ERR_EXTERNAL):
+            return m == msg
+        if m.startswith(ERR_TRANSIENT):
             return msg.startswith(ERR_TRANSIENT)
         return False
     except Exception:
         return False
 
 
-class Attest(gl.Contract):
+class Attest(gl.contract.Contract):
     attestations: DynArray[Attestation]
     holder_index: TreeMap[str, u256]  # "0xaddr:k" -> id
     holder_count: TreeMap[str, u256]  # "0xaddr" -> number of attestations
@@ -376,4 +380,4 @@ class Attest(gl.Contract):
         def validator_fn(res) -> bool:
             return _validate(params, res)
 
-        return gl.vm.run_nondet_unsafe(leader_fn, validator_fn)
+        return gl.vm.run_nondet(leader_fn, validator_fn)

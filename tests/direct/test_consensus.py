@@ -1,5 +1,7 @@
 """Validator behaviour for attestation checks."""
 
+import json
+
 import pytest
 
 from tests.direct.conftest import README, github, request_repo
@@ -71,7 +73,7 @@ def test_source_and_statement_are_fenced(att, direct_vm, direct_alice):
 
     def spy(vm, data):
         seen["prompt"] = data["prompt"]
-        return {"ok": {"supported": False, "reason": "x"}}
+        return {"ok": json.dumps({"supported": False, "reason": "x"})}
 
     wm._handle_llm_request = spy
     try:

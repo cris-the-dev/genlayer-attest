@@ -1,7 +1,7 @@
-// Shared wallet + contract helpers for the demo apps (testnet Bradbury, MetaMask).
-import { createClient, testnetBradbury } from "./genlayer.js"; // bundle of genlayer-js 1.1.8 (see README);
+// Shared wallet + contract helpers for the demo apps (testnet Bradbury Phase 2, MetaMask).
+import { createClient, testnetBradbury } from "./genlayer.js"; // bundle of genlayer-js 2.0.0-rc.2 (see README);
 
-export const EXPLORER = "https://explorer-bradbury.genlayer.com";
+export const EXPLORER = testnetBradbury.blockExplorers.default.url;
 const CHAIN_HEX = "0x" + testnetBradbury.id.toString(16);
 
 export const plain = (v) =>
@@ -9,7 +9,9 @@ export const plain = (v) =>
   : Array.isArray(v) ? v.map(plain)
   : typeof v === "bigint" ? Number(v) : v;
 
-const reader = createClient({ chain: testnetBradbury });
+// The chain's default RPC (rpc.testnet-chain.genlayer.com) does not serve gen_call; this one serves the same chain.
+const endpoint = "https://rpc-bradbury.genlayer.com";
+const reader = createClient({ chain: testnetBradbury, endpoint });
 let account = null;
 
 export function contract(address) {
@@ -18,8 +20,10 @@ export function contract(address) {
     // Sends a tx through MetaMask and waits until validators accept it.
     write: async (functionName, args = [], value = 0n, onHash) => {
       if (!account) throw new Error("Connect a wallet first");
-      const client = createClient({ chain: testnetBradbury, account });
-      const hash = await client.writeContract({ address, functionName, args, value });
+      const client = createClient({ chain: testnetBradbury, endpoint, account });
+      // Bradbury Phase 2 rejects transactions without a fee deposit; the unused part is refunded.
+      const { distribution, feeValue } = await client.estimateTransactionFees({});
+      const hash = await client.writeContract({ address, functionName, args, value, fees: { distribution, feeValue } });
       onHash?.(hash);
       // Poll ourselves so timeouts stop the wait instead of hanging until retries run out.
       for (let i = 0; i < 120; i++) {
