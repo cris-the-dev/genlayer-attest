@@ -5,7 +5,8 @@
 //   GL_PK0=0x... GL_PK1=0x... node tests/integration/bradbury.mjs build/attest.py [contract]
 //
 // Every transaction carries a fee deposit from estimateTransactionFees. Uses the public
-// demo page at attest.cristhedev.com, which carries GL_PK0's tag; GL_PK1 has none there.
+// demo page and domain attest.cristhedev.com and the genlayer-attest repo, which carry GL_PK0's tag;
+// GL_PK1 has none.
 // Prints each tx hash and its result; exits non-zero on the first failed expectation.
 import { readFileSync } from "node:fs";
 import { createAccount, createClient } from "genlayer-js";
@@ -13,6 +14,8 @@ import { testnetBradbury } from "genlayer-js/chains";
 
 const URL = "https://attest.cristhedev.com/demo/profile.html";
 const STATEMENT = "builds GenLayer intelligent contracts";
+const REPO = "cris-the-dev/genlayer-attest";
+const REPO_STATEMENT = "maintains a GenLayer intelligent contract that issues attestations backed by a public source";
 // rpc.testnet-chain.genlayer.com (the chain default) does not serve gen_call; this one serves the same chain.
 const endpoint = "https://rpc-bradbury.genlayer.com";
 const a0 = createAccount(process.env.GL_PK0);
@@ -75,4 +78,20 @@ check(r.txExecutionResultName === "FINISHED_WITH_ERROR", "only the holder can re
 r = await tx(c0, "revoke by holder", address, "revoke", [n]);
 check(r.txExecutionResultName === "FINISHED_WITH_RETURN", "holder revokes");
 check((await read("is_attested", [a0.address, "web"])) === false, "is_attested false after revoke");
+
+// domain: attest.cristhedev.com serves GL_PK0's tag at /.well-known/genlayer-attest.txt; no LLM.
+r = await tx(c0, "request domain", address, "request", ["domain", "attest.cristhedev.com", "controls the domain", 30]);
+check(r.txExecutionResultName === "FINISHED_WITH_RETURN", "domain request succeeds");
+check((await read("is_attested_subject", [a0.address, "domain", "attest.cristhedev.com"])) === true, "is_attested_subject(holder, domain)");
+
+// github_repo: this repository carries .genlayer-attest with GL_PK0's tag; validators judge the README.
+r = await tx(c0, "request github_repo", address, "request", ["github_repo", REPO, REPO_STATEMENT, 30]);
+check(r.txExecutionResultName === "FINISHED_WITH_RETURN", "github_repo request succeeds");
+check((await read("is_attested", [a0.address, "github_repo"])) === true, "is_attested(holder, github_repo)");
+
+// A host that does not resolve reverts; nothing is recorded.
+const before = Number(await read("get_count", []));
+r = await tx(c0, "request unreachable", address, "request", ["domain", "attest-nowhere.invalid", "x", 30]);
+check(r.txExecutionResultName === "FINISHED_WITH_ERROR", "unreachable source reverts");
+check(Number(await read("get_count", [])) === before, "nothing recorded");
 console.log("contract", address);
