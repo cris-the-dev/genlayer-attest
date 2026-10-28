@@ -52,7 +52,6 @@ SUPERSEDED = "SUPERSEDED"
 DAY = 86_400
 MAX_DAYS = 365
 MAX_SOURCE_CHARS = 6_000
-MAX_REASON = 300
 REPO_RE = re.compile(r"^[A-Za-z0-9-]{1,39}/[A-Za-z0-9._-]{1,100}$")
 DOMAIN_RE = re.compile(r"^([a-z0-9-]{1,63}\.)+[a-z]{2,}$")
 URL_RE = re.compile(r"^https://[A-Za-z0-9.-]+\.[A-Za-z]{2,}(/[^\s]*)?$")
@@ -68,7 +67,7 @@ class Attestation:
     subject: str
     statement: str
     status: str
-    reason: str  # why rejected or revoked; the validators' note when active
+    reason: str  # fixed text for the agreed outcome code (never model-written)
     source_sha256: str  # SHA-256 of the judged source bytes
     issued_at: u256
     expires_at: u256
@@ -117,8 +116,24 @@ def _text(body: bytes) -> str:
     return shown
 
 
-def _outcome(ok: bool, code: str, sha: str, note: str = "") -> dict:
-    return {"ok": ok, "code": code, "sha256": sha, "note": note[:MAX_REASON]}
+# The stored reason is a function of the agreed code, so nothing a leader writes reaches state.
+NOTES = {
+    "repo_not_found": "repository not found",
+    "ownership_tag_missing": "ownership tag not found in the source",
+    "source_empty": "source is empty",
+    "unchanged": "source unchanged since the last check",
+    "ok": "domain serves the ownership tag",
+    "supported": "source supports the statement",
+    "not_supported": "source does not support the statement",
+}
+
+
+def _outcome(ok: bool, code: str, sha: str) -> dict:
+    return {"ok": ok, "code": code, "sha256": sha}
+
+
+def _reason(r: dict) -> str:
+    return NOTES[r["code"]] if r["ok"] else f"{r['code']}: {NOTES[r['code']]}"
 
 
 def _check(p: dict) -> dict:
@@ -143,7 +158,7 @@ def _check(p: dict) -> dict:
         _, proof = _get(f"https://{subject}/.well-known/genlayer-attest.txt")
         if tag not in proof.decode("utf-8", errors="replace").lower():
             return _outcome(False, "ownership_tag_missing", "")
-        return _outcome(True, "ok", hashlib.sha256(proof).hexdigest(), "domain serves the ownership tag")
+        return _outcome(True, "ok", hashlib.sha256(proof).hexdigest())
     else:
         _, source = _get(subject)
         if tag not in source.decode("utf-8", errors="replace").lower():
@@ -153,7 +168,7 @@ def _check(p: dict) -> dict:
     if not source:
         return _outcome(False, "source_empty", sha)
     if sha == p["prev_sha"]:
-        return _outcome(True, "unchanged", sha, "source unchanged since the last check")
+        return _outcome(True, "unchanged", sha)
 
     prompt = f"""You verify a public claim that an address makes about itself.
 
@@ -185,7 +200,7 @@ Respond with ONLY JSON:
     if not isinstance(out, dict) or not isinstance(out.get("supported"), bool):
         raise gl.vm.UserError(f"{ERR_LLM} expected a boolean 'supported'")
     ok = out["supported"]
-    return _outcome(ok, "supported" if ok else "not_supported", sha, str(out.get("reason", "")))
+    return _outcome(ok, "supported" if ok else "not_supported", sha)
 
 
 def _validate(p: dict, leader_result) -> bool:
@@ -195,15 +210,11 @@ def _validate(p: dict, leader_result) -> bool:
         mine = _check(p)
     except Exception:
         return False
+    # Every field the contract stores must be what this validator derived itself: the verdict,
+    # the code, and the hash of the bytes it fetched. "unchanged" is only reachable when that
+    # hash equals prev_sha, so a leader cannot claim the shortcut or plant a future hash.
     t = leader_result.calldata
-    if not isinstance(t, dict) or len(str(t.get("note", ""))) > MAX_REASON:
-        return False
-    if t.get("ok") is not mine["ok"]:
-        return False
-    # "unchanged" and "supported" both keep an attestation active: a validator
-    # whose copy differs by a dynamic byte re-judges and must still agree.
-    keep = ("ok", "unchanged", "supported")
-    return t.get("code") == mine["code"] or (t.get("code") in keep and mine["code"] in keep)
+    return isinstance(t, dict) and t == mine and t["ok"] is mine["ok"]
 
 
 def _agree_on_error(leader_result, p: dict) -> bool:
@@ -263,7 +274,7 @@ class Attest(gl.contract.Contract):
                 subject=subject,
                 statement=statement,
                 status=ACTIVE if r["ok"] else REJECTED,
-                reason=r["note"] if r["ok"] else f"{r['code']}: {r['note']}".rstrip(": "),
+                reason=_reason(r),
                 source_sha256=r["sha256"],
                 issued_at=u256(now),
                 expires_at=u256(now + valid_days * DAY if r["ok"] else 0),
@@ -298,10 +309,10 @@ class Attest(gl.contract.Contract):
         if r["ok"]:
             if r["code"] != "unchanged":
                 a.source_sha256 = r["sha256"]
-                a.reason = r["note"]
+                a.reason = _reason(r)
         else:
             a.status = REVOKED
-            a.reason = f"{r['code']}: {r['note']}".rstrip(": ")
+            a.reason = _reason(r)
         self._emit(a)
         return {"status": a.status, "code": r["code"], "reason": a.reason}
 

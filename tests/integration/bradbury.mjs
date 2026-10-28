@@ -72,6 +72,7 @@ r = await tx(c0, "request web (holder)", address, "request", ["web", URL, STATEM
 check(r.txExecutionResultName === "FINISHED_WITH_RETURN", "request succeeds");
 const att = await read("get_attestation", [n]);
 check(att.get?.("status") === "ACTIVE" || att.status === "ACTIVE", `attestation ${n} ACTIVE`);
+check((att.get?.("reason") ?? att.reason) === "source supports the statement", "stored reason is the fixed text for the agreed code");
 check((await read("is_attested", [a0.address, "web"])) === true, "is_attested(holder, web)");
 
 r = await tx(c1, "request web (other)", address, "request", ["web", URL, STATEMENT, 30]);

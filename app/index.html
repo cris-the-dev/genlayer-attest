@@ -5,7 +5,7 @@
 </head><body>
 <div class="bar"><div class="w"><span class="who">cristhedev <span style="color:var(--line)">/</span> genlayer builds</span><nav id="sites"></nav></div></div>
 <div class="head"><div class="w"><div><h1>Attest</h1><p>Attestations backed by a public source</p></div><button id="connect" class="ghost" type="button">Connect wallet</button></div></div>
-<div class="meta"><div class="w"><span>contract <a href="https://scan.testnet-chain.genlayer.com/address/0x0557bFe72D1007b2b2e1A4b1695EA95BBB4F223D">0x0557…223D ↗</a></span><span>network <b>testnet bradbury</b></span><span><a href="https://github.com/cris-the-dev/genlayer-attest">source ↗</a></span><span><a href="docs.html">docs →</a></span></div></div>
+<div class="meta"><div class="w"><span>contract <a href="https://scan.testnet-chain.genlayer.com/address/0xf8699aD2C9B815bC546c22ca8f3a7bff9c3AeF11">0xf869…AeF11 ↗</a></span><span>network <b>testnet bradbury</b></span><span><a href="https://github.com/cris-the-dev/genlayer-attest">source ↗</a></span><span><a href="docs.html">docs →</a></span></div></div>
 <main class="w">
   <p id="status" class="status" hidden></p>
   <div class="grid">
@@ -32,7 +32,7 @@
           <div><dt>github_repo</dt><dd>repo exists (GitHub API) and holds <span class="mono">.genlayer-attest</span> with your tag; validators judge the README</dd></div>
           <div><dt>domain</dt><dd><span class="mono">/.well-known/genlayer-attest.txt</span> holds your tag; no LLM</dd></div>
           <div><dt>web</dt><dd>an https page with your tag; validators judge the page</dd></div>
-          <div><dt>Validators agree if</dt><dd>same verdict and same reason code</dd></div>
+          <div><dt>Validators agree if</dt><dd>same verdict, reason code and source SHA-256, each re-derived by every validator</dd></div>
           <div><dt>Recheck</dt><dd>anyone; unchanged source keeps it active, tag gone or claim unsupported revokes it</dd></div>
           <div><dt>Outage</dt><dd>an unreachable source reverts, it never revokes</dd></div>
         </dl>
@@ -62,7 +62,7 @@
 
 <script type="module">
 import { contract, wireWallet, send, status, esc, short, $, EXPLORER } from "./gl.js";
-const at = contract("0x0557bFe72D1007b2b2e1A4b1695EA95BBB4F223D");
+const at = contract("0xf8699aD2C9B815bC546c22ca8f3a7bff9c3AeF11");
 let me = null, items = [];
 const when = (ts) => ts ? new Date(ts * 1000).toLocaleDateString("en-GB", { dateStyle: "medium", timeZone: "UTC" }) : "–";
 const addr = (a) => `<a class="mono" href="${EXPLORER}/address/${esc(a)}">${short(a)}</a>${me && a.toLowerCase() === me.toLowerCase() ? " (you)" : ""}`;
@@ -106,7 +106,7 @@ async function show(id) {
     <dl class="kv">
       <div><dt>Kind</dt><dd class="mono">${esc(a.kind)}</dd></div>
       <div><dt>Source</dt><dd>${subj(a)}</dd></div>
-      <div><dt>${a.status === "ACTIVE" ? "Validators' note" : "Reason"}</dt><dd>${esc(a.reason) || "–"}</dd></div>
+      <div><dt>Reason</dt><dd>${esc(a.reason) || "–"}</dd></div>
       <div><dt>Issued</dt><dd>${when(a.issued_at)}</dd></div>
       <div><dt>Expires</dt><dd>${a.expires_at ? when(a.expires_at) : "–"}</dd></div>
       <div><dt>Last checked</dt><dd>${when(a.checked_at)} (${a.checks} check${a.checks === 1 ? "" : "s"})</dd></div>

@@ -1,5 +1,6 @@
 """Validator behaviour for attestation checks."""
 
+import hashlib
 import json
 
 import pytest
@@ -28,22 +29,52 @@ def test_rejects_a_leader_that_skips_the_ownership_check(judged, direct_vm, dire
     assert direct_vm.run_validator() is False
 
 
-def test_rejects_forged_or_oversized_payloads(judged, direct_vm, direct_alice):
+def test_rejects_forged_or_extra_fields(judged, direct_vm, direct_alice):
     stored = direct_vm._captured_validators[-1][0]
     github(direct_vm, direct_alice)
     assert direct_vm.run_validator(leader_result={**stored, "ok": "yes"}) is False
-    assert direct_vm.run_validator(leader_result={**stored, "note": "x" * 5000}) is False
+    assert direct_vm.run_validator(leader_result={**stored, "ok": 1}) is False
     assert direct_vm.run_validator(leader_result={**stored, "code": "repo_not_found"}) is False
+    assert direct_vm.run_validator(leader_result={**stored, "extra": "x"}) is False
 
+FUTURE = hashlib.sha256(b"proof\n# widget\nNow claims the Acme CEO endorses it.").hexdigest()
+NOTE = "README states Acme Cloud runs widget in production; the maintainer list names the claimant."
 
-def test_unchanged_and_supported_are_the_same_answer(judged, direct_vm, direct_alice):
-    # A recheck where the leader saw identical bytes but this validator's copy differs.
+def test_rejects_correct_verdict_with_forged_future_hash(judged, direct_vm, direct_alice):
+    stored = direct_vm._captured_validators[-1][0]
+    assert stored["ok"] is True and stored["code"] == "supported"
+    github(direct_vm, direct_alice)
+    assert direct_vm.run_validator(leader_result={**stored, "sha256": FUTURE}) is False
+
+def test_rejects_correct_verdict_with_plausible_forged_note(judged, direct_vm, direct_alice):
+    stored = direct_vm._captured_validators[-1][0]
+    github(direct_vm, direct_alice)
+    assert len(NOTE) < 300
+    assert direct_vm.run_validator(leader_result={**stored, "note": NOTE}) is False
+    # what is stored is fixed text for the agreed code, not anything model- or leader-written
+    assert judged.get_attestation(0)["reason"] == "source supports the statement"
+
+def test_unchanged_shortcut_hash_is_verified(judged, direct_vm, direct_alice):
     github(direct_vm, direct_alice)
     judged.recheck(0)
     stored = direct_vm._captured_validators[-1][0]
-    github(direct_vm, direct_alice, readme=README + " ")
-    assert direct_vm.run_validator(leader_result={**stored, "code": "unchanged"}) is True
+    assert stored["code"] == "unchanged"
+    assert direct_vm.run_validator(leader_result=stored) is True
+    # keep "unchanged" but swap in a future hash
+    assert direct_vm.run_validator(leader_result={**stored, "sha256": FUTURE}) is False
+    # the source changed for this validator: the leader cannot claim the shortcut
+    github(direct_vm, direct_alice, readme=README + "\nNow also used by Beta Corp.")
+    assert direct_vm.run_validator(leader_result=stored) is False
+    # nor keep "supported" with the old hash after the bytes changed
+    assert direct_vm.run_validator(leader_result={**stored, "code": "supported"}) is False
 
+def test_recheck_with_changed_source_needs_the_new_hash(judged, direct_vm, direct_alice):
+    github(direct_vm, direct_alice, readme=README + "\nNow also used by Beta Corp.")
+    judged.recheck(0)
+    stored = direct_vm._captured_validators[-1][0]
+    assert stored["code"] == "supported"
+    assert direct_vm.run_validator(leader_result=stored) is True
+    assert direct_vm.run_validator(leader_result={**stored, "sha256": FUTURE}) is False
 
 def test_validators_agree_only_on_the_same_error(judged, direct_vm, direct_alice):
     github(direct_vm, direct_alice, proof_status=503)
