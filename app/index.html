@@ -1,64 +1,165 @@
 <!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Attest</title><meta name="description" content="Attestations backed by a public source"><meta name="theme-color" content="#FAFAF7">
+<title>Attest: verified claims any contract can trust</title>
+<meta name="description" content="Prove you own a repo, domain or page, and that it backs your claim. Attest issues expiring, non-transferable attestations on GenLayer that any contract can check with one call.">
+<meta name="theme-color" content="#F6F1E6">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%238A6A1F'/%3E%3Cpath d='M23 32l6 6 12-12' fill='none' stroke='%23F8F3E8' stroke-width='6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400..600;1,9..144,400..600&family=Hanken+Grotesk:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap">
 <link rel="stylesheet" href="app.css">
 </head><body>
-<div class="bar"><div class="w"><span class="who">cristhedev <span style="color:var(--line)">/</span> genlayer builds</span><nav id="sites"></nav></div></div>
-<div class="head"><div class="w"><div><h1>Attest</h1><p>Attestations backed by a public source</p></div><button id="connect" class="ghost" type="button">Connect wallet</button></div></div>
-<div class="meta"><div class="w"><span>contract <a href="https://scan.testnet-chain.genlayer.com/address/0xf8699aD2C9B815bC546c22ca8f3a7bff9c3AeF11">0xf869…AeF11 ↗</a></span><span>network <b>testnet bradbury</b></span><span><a href="https://github.com/cris-the-dev/genlayer-attest">source ↗</a></span><span><a href="docs.html">docs →</a></span></div></div>
-<main class="w">
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+  <g id="seal"><path d="M32 4l6.5 5.2 8.3-1 2.2 8 7.4 4.1-3 7.7 3 7.7-7.4 4.1-2.2 8-8.3-1L32 60l-6.5-5.2-8.3 1-2.2-8-7.4-4.1 3-7.7-3-7.7 7.4-4.1 2.2-8 8.3 1z" fill="#8A6A1F"/><circle cx="32" cy="32" r="17" fill="none" stroke="#F1E6CB" stroke-width="1.5" stroke-dasharray="2 3"/><path d="M24 32.5l5.5 5.5 11-11" fill="none" stroke="#F8F3E8" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/></g>
+</defs></svg>
+
+<header class="nav" id="nav"><div class="w">
+  <a class="brand" href="#top"><svg viewBox="0 0 64 64"><use href="#seal"/></svg>Attest</a>
+  <nav><a href="#how">How it works</a><a href="#developers">Developers</a><a href="#explorer">Explorer</a><a href="docs.html">Docs</a></nav>
+  <button id="connect" class="ghost sm" type="button">Connect wallet</button>
+</div></header>
+
+<main id="top">
+<section class="hero"><div class="w">
+  <div>
+    <span class="pill rise"><i></i>Live on GenLayer Testnet Bradbury</span>
+    <h1 class="rise d1">Claims you can <em>prove</em>.<br>Checks any contract can trust.</h1>
+    <p class="lede rise d2">Put your tag in a repo, domain or page you control. GenLayer validators check that the source is yours and actually backs your claim, then issue an expiring attestation any contract can read with one call.</p>
+    <div class="cta rise d3"><a class="btn" href="#explorer">Get attested</a><a class="btn ghost" href="#developers">Integrate in one line</a></div>
+  </div>
+  <article class="cred rise d4" aria-label="Example attestation">
+    <svg class="seal" viewBox="0 0 64 64"><use href="#seal"/></svg>
+    <small>Attestation · github_repo</small>
+    <h3>“maintains a GenLayer intelligent contract that issues attestations backed by a public source”</h3>
+    <dl>
+      <dt>Holder</dt><dd>0xe28F…665f</dd>
+      <dt>Source</dt><dd>cris-the-dev/genlayer-attest</dd>
+      <dt>Proof</dt><dd>.genlayer-attest holds the holder's tag</dd>
+      <dt>Verdict</dt><dd>source supports the statement</dd>
+    </dl>
+    <div class="foot"><span class="tag ok">Active</span><a href="#attestation-3" data-show="3">View on-chain →</a></div>
+  </article>
+</div></section>
+
+<section class="stats"><div class="w">
+  <div><b id="stat-count">–</b><span>attestations issued on-chain</span></div>
+  <div><b>3</b><span>source kinds: repo, domain, web page</span></div>
+  <div><b>1 call</b><span><span class="mono">is_attested(addr, kind)</span> to integrate</span></div>
+  <div><b>0 LLM calls</b><span>to recheck an unchanged source</span></div>
+</div></section>
+
+<section class="sec" id="how"><div class="w">
+  <p class="eyebrow">How it works</p>
+  <h2>Ownership first. Then the claim. Then it stays honest.</h2>
+  <p class="sub">A profile anyone can type is worth nothing. Attest only signs what a public source both belongs to you and supports.</p>
+  <ol class="steps">
+    <li><b>Tag your source</b><p>Add <span class="mono">genlayer-attest:&lt;your address&gt;</span> to a <span class="mono">.genlayer-attest</span> file in your repo, <span class="mono">/.well-known/</span> on your domain, or your page.</p>
+      <div class="kinds"><span class="tag gold">github_repo</span><span class="tag gold">domain</span><span class="tag gold">web</span></div></li>
+    <li><b>Validators check it</b><p>Code confirms the tag is there. Then independent validators each read the source and must agree it supports your statement, down to the hash of the bytes they read.</p></li>
+    <li><b>Anyone can recheck</b><p>Delete the tag or change the source so it no longer backs you, and anyone can revoke it with a recheck. Attestations also expire on their own.</p></li>
+  </ol>
+</div></section>
+
+<section class="sec" style="padding-top:0"><div class="w">
+  <p class="eyebrow">Use cases</p>
+  <h2>Gate on facts, not on self-declared profiles.</h2>
+  <p class="sub">Every case below is one view call from another contract.</p>
+  <div class="cases">
+    <div class="case"><b>Grants and bounties</b><p>Pay out only to the address that really maintains the repo it is funding.</p><code>is_attested_subject(a, "github_repo", repo)</code></div>
+    <div class="case"><b>Allowlists</b><p>Let a protocol or DAO admit members who control a named domain.</p><code>is_attested(a, "domain")</code></div>
+    <div class="case"><b>Hiring and reputation</b><p>Back a claimed role or track record with the page that states it.</p><code>is_attested(a, "web")</code></div>
+    <div class="case"><b>Anti-impersonation</b><p>Show a verified badge only for wallets proven to own the official site.</p><code>is_attested_subject(a, "domain", site)</code></div>
+  </div>
+</div></section>
+
+<section class="sec dev" id="developers"><div class="w">
+  <p class="eyebrow">For developers</p>
+  <h2>One line in your contract.</h2>
+  <p class="sub">Attest is a public GenLayer contract. Read it from your own intelligent contract, or from any frontend with genlayer-js.</p>
+  <div class="grid2">
+    <div class="code"><header><span>your_contract.py</span><span>GenVM</span></header><pre><span class="c"># only verified maintainers can claim the grant</span>
+attest = gl.get_contract_at(Address(<span class="s">ATTEST</span>))
+<span class="k">if not</span> attest.view().is_attested_subject(
+        gl.message.sender_address.as_hex,
+        <span class="s">"github_repo"</span>, <span class="s">"acme/widget"</span>):
+    <span class="k">raise</span> gl.vm.UserError(<span class="s">"not a verified maintainer"</span>)</pre></div>
+    <div class="code"><header><span>app.js</span><span>genlayer-js</span></header><pre><span class="k">const</span> ok = <span class="k">await</span> client.readContract({
+  address: <span class="s">"0xf8699aD2C9B815bC546c22ca8f3a7bff9c3AeF11"</span>,
+  functionName: <span class="s">"is_attested"</span>,
+  args: [wallet, <span class="s">"domain"</span>],
+});
+<span class="c">// true while active and unexpired</span></pre></div>
+  </div>
+  <ul>
+    <li>Non-transferable: tied to the holder's address</li>
+    <li>Expires after 1–365 days, chosen by the holder</li>
+    <li>Revocable by the holder or by any failed recheck</li>
+    <li>Stores the SHA-256 of the exact bytes judged</li>
+  </ul>
+</div></section>
+
+<section class="sec"><div class="w">
+  <p class="eyebrow">Why trust it</p>
+  <h2>Built so a dishonest leader gets nowhere.</h2>
+  <p class="sub">GenLayer picks one validator to lead each check; the others redo it independently.</p>
+  <div class="trust">
+    <div><b>Ownership is checked in code</b><p>Repo existence, the tag and the domain file are verified deterministically. The model is only asked whether the source supports the claim.</p></div>
+    <div><b>Validators re-derive everything</b><p>Verdict, reason code and source hash must match each validator's own result. A forged hash or note is rejected.</p></div>
+    <div><b>Outages never revoke</b><p>A timeout, rate limit or 5xx reverts the check instead. Only a missing tag or an unsupported claim revokes.</p></div>
+    <div><b>Injection-resistant</b><p>The statement and the source are fenced and treated as data, never as instructions.</p></div>
+  </div>
+</div></section>
+
+<section class="sec" id="explorer" style="padding-top:0"><div class="w">
+  <p class="eyebrow">Explorer</p>
+  <h2>Look up any address.</h2>
+  <p class="sub">Reading is free and needs no wallet. Connect one to request, recheck or revoke.</p>
   <p id="status" class="status" hidden></p>
-  <div class="grid">
+  <div class="app">
     <div>
-      <section>
-        <h2>Look up an address</h2>
-        <form id="lookup" class="row" style="align-items:end"><label>Address<input name="addr" pattern="0x[0-9a-fA-F]{40}" placeholder="0x…" required></label><div><button class="ghost">Show attestations</button></div></form>
-      </section>
-      <section>
-        <h2 id="list-title">Latest attestations</h2>
+      <div class="panel">
+        <h3>Find attestations</h3>
+        <form id="lookup" class="search"><input name="addr" pattern="0x[0-9a-fA-F]{40}" placeholder="Paste an address 0x…" aria-label="Address" required><button>Search</button></form>
+        <p class="try">Try the demo holder: <button type="button" data-try="0xe28F10a000d641a5D0569055aAEF61Dcca94665f">0xe28F…665f</button></p>
+      </div>
+      <div class="panel">
+        <h3 id="list-title">Latest attestations</h3>
         <div class="tbl"><table>
           <thead><tr><th>#</th><th>Holder</th><th>Kind</th><th>Subject</th><th>Status</th><th>Expires</th></tr></thead>
           <tbody id="list"><tr><td colspan="6" class="empty">Reading the contract…</td></tr></tbody>
         </table></div>
-      </section>
-      <section id="detail" hidden></section>
+      </div>
+      <div class="panel" id="detail" hidden></div>
     </div>
-
-    <aside>
-      <section>
-        <h2>How a claim is checked</h2>
-        <dl class="kv">
-          <div><dt>Ownership</dt><dd>the source must contain your tag <span class="mono">genlayer-attest:&lt;address&gt;</span></dd></div>
-          <div><dt>github_repo</dt><dd>repo exists (GitHub API) and holds <span class="mono">.genlayer-attest</span> with your tag; validators judge the README</dd></div>
-          <div><dt>domain</dt><dd><span class="mono">/.well-known/genlayer-attest.txt</span> holds your tag; no LLM</dd></div>
-          <div><dt>web</dt><dd>an https page with your tag; validators judge the page</dd></div>
-          <div><dt>Validators agree if</dt><dd>same verdict, reason code and source SHA-256, each re-derived by every validator</dd></div>
-          <div><dt>Recheck</dt><dd>anyone; unchanged source keeps it active, tag gone or claim unsupported revokes it</dd></div>
-          <div><dt>Outage</dt><dd>an unreachable source reverts, it never revokes</dd></div>
-        </dl>
-      </section>
-      <section>
-        <details id="req">
-          <summary>Request an attestation</summary>
-          <p class="hint" id="mytag">Connect a wallet to see your ownership tag.</p>
-          <form id="request">
-            <label>Kind<select name="kind"><option value="github_repo">github_repo (owner/repo)</option><option value="domain">domain (example.com)</option><option value="web">web (https URL)</option></select></label>
-            <label>Subject<input name="subject" placeholder="owner/repo" required></label>
-            <label>Statement (what the source should prove; ignored for domains)<textarea name="statement" minlength="10" maxlength="500" placeholder="maintains owner/repo, a …"></textarea></label>
-            <label>Valid for (days)<input name="days" type="number" min="1" max="365" value="90" required></label>
-            <button type="submit">Request</button>
-          </form>
-        </details>
-      </section>
+    <aside class="panel" id="req">
+      <h3>Request an attestation</h3>
+      <p class="hint" id="mytag">Connect a wallet to see your ownership tag.</p>
+      <form id="request">
+        <label>Kind<select name="kind"><option value="github_repo">GitHub repo (owner/repo)</option><option value="domain">Domain (example.com)</option><option value="web">Web page (https URL)</option></select></label>
+        <label>Subject<input name="subject" placeholder="owner/repo" required></label>
+        <label>Statement<textarea name="statement" minlength="10" maxlength="500" placeholder="maintains owner/repo, a …"></textarea></label>
+        <p class="hint" style="margin-top:-8px">What the source should prove. Ignored for domains.</p>
+        <label>Valid for (days)<input name="days" type="number" min="1" max="365" value="90" required></label>
+        <button type="submit">Request attestation</button>
+      </form>
     </aside>
   </div>
+</div></section>
+
+<section class="sec close"><div class="w">
+  <h2>Stop trusting profiles. Start checking proofs.</h2>
+  <p class="sub" style="margin:0 auto 32px">Open source, MIT licensed, live on Bradbury.</p>
+  <div class="cta"><a class="btn" href="#explorer">Get attested</a><a class="btn ghost" href="https://github.com/cris-the-dev/genlayer-attest">View source</a></div>
+</div></section>
 </main>
 
-<div class="steps"><ol>
-  <li><small>01</small><b>Tag</b><p>Put <span class="mono">genlayer-attest:&lt;your address&gt;</span> in the source: a <span class="mono">.genlayer-attest</span> file in your repo, a well-known file on your domain, or your page.</p></li>
-  <li><small>02</small><b>Check</b><p>The contract fetches the source. If your tag is there, validators judge whether the source supports your statement and must agree on the verdict.</p></li>
-  <li><small>03</small><b>Use</b><p>Other contracts call <span class="mono">is_attested(address, kind)</span>. Anyone can recheck; if the source changes or the tag disappears, it is revoked.</p></li>
-</ol></div>
+<footer><div class="w">
+  <div>
+    <a class="brand" href="#top"><svg viewBox="0 0 64 64"><use href="#seal"/></svg>Attest</a>
+    <p style="margin:12px 0 0">Built on <a href="https://genlayer.com">GenLayer</a>. Contract <a class="mono" href="https://scan.testnet-chain.genlayer.com/address/0xf8699aD2C9B815bC546c22ca8f3a7bff9c3AeF11">0xf869…AeF11</a></p>
+    <p style="margin:6px 0 0"><a href="docs.html">Docs</a> · <a href="https://github.com/cris-the-dev/genlayer-attest">GitHub</a></p>
+  </div>
+  <div><h4>More GenLayer builds</h4><nav id="sites"></nav></div>
+</div></footer>
 
 <script type="module">
 import { contract, wireWallet, send, status, esc, short, $, EXPLORER } from "./gl.js";
@@ -75,9 +176,9 @@ async function load(holder, openId) {
   try {
     let ids;
     if (holder) { ids = (await at.read("get_holder", [holder])).reverse(); $("#list-title").textContent = `Attestations of ${short(holder)}`; }
-    else { const n = await at.read("get_count"); ids = [...Array(Math.min(n, 30)).keys()].map((i) => n - 1 - i); $("#list-title").textContent = "Latest attestations"; }
+    else { const n = await at.read("get_count"); $("#stat-count").textContent = n; ids = [...Array(Math.min(n, 30)).keys()].map((i) => n - 1 - i); $("#list-title").textContent = "Latest attestations"; }
     items = await Promise.all(ids.map((i) => at.read("get_attestation", [i])));
-    $("#list").innerHTML = items.length ? items.map((a) => `<tr style="cursor:pointer" data-id="${a.id}">
+    $("#list").innerHTML = items.length ? items.map((a) => `<tr data-id="${a.id}">
       <td class="num mut">${a.id}</td><td>${addr(a.holder)}</td><td class="mono">${esc(a.kind)}</td><td>${subj(a)}</td>
       <td><span class="tag ${cls[a.status] || ""}">${esc(a.status.toLowerCase())}</span></td><td class="num">${a.status === "ACTIVE" ? when(a.expires_at) : "–"}</td></tr>`).join("")
       : `<tr><td colspan="6" class="empty">No attestations${holder ? " for this address" : " yet"}.</td></tr>`;
@@ -91,8 +192,8 @@ async function load(holder, openId) {
 function actions(a) {
   if (!me) return `<p class="hint" style="margin-top:16px">Connect a wallet to recheck or revoke.</p>`;
   if (a.status !== "ACTIVE") return "";
-  const out = [`<button class="ghost" data-act="recheck">Recheck the source now</button>`];
-  if (a.holder.toLowerCase() === me.toLowerCase()) out.push(`<button class="ghost" data-act="revoke">Revoke</button>`);
+  const out = [`<button class="ghost sm" data-act="recheck">Recheck the source now</button>`];
+  if (a.holder.toLowerCase() === me.toLowerCase()) out.push(`<button class="ghost sm" data-act="revoke">Revoke</button>`);
   return `<div style="display:flex;gap:12px;flex-wrap:wrap;margin-top:20px">${out.join("")}</div>`;
 }
 
@@ -101,8 +202,8 @@ async function show(id) {
   if (!a) return;
   const el = $("#detail");
   el.hidden = false;
-  el.innerHTML = `<h2>Attestation #${a.id} <span class="tag ${cls[a.status] || ""}">${esc(a.status.toLowerCase())}</span></h2>
-    <blockquote style="margin:8px 0 12px;padding-left:12px;border-left:2px solid var(--fg)">${addr(a.holder)} ${esc(a.statement)}</blockquote>
+  el.innerHTML = `<h3>Attestation #${a.id} <span class="tag ${cls[a.status] || ""}">${esc(a.status.toLowerCase())}</span></h3>
+    <blockquote class="claim">${addr(a.holder)} ${esc(a.statement)}</blockquote>
     <dl class="kv">
       <div><dt>Kind</dt><dd class="mono">${esc(a.kind)}</dd></div>
       <div><dt>Source</dt><dd>${subj(a)}</dd></div>
@@ -116,7 +217,7 @@ async function show(id) {
   el.dataset.id = a.id;
 }
 
-$("#list").addEventListener("click", (e) => { const tr = e.target.closest("tr[data-id]"); if (tr && !e.target.closest("a")) { history.replaceState(null, "", `#attestation-${tr.dataset.id}`); show(Number(tr.dataset.id)); $("#detail").scrollIntoView({ behavior: "smooth" }); } });
+$("#list").addEventListener("click", (e) => { const tr = e.target.closest("tr[data-id]"); if (tr && !e.target.closest("a")) { history.replaceState(null, "", `#attestation-${tr.dataset.id}`); show(Number(tr.dataset.id)); $("#detail").scrollIntoView({ behavior: "smooth", block: "nearest" }); } });
 $("#detail").addEventListener("click", async (e) => {
   const fn = e.target.dataset?.act; if (!fn) return;
   const id = Number($("#detail").dataset.id);
@@ -124,6 +225,8 @@ $("#detail").addEventListener("click", async (e) => {
   if (await send(at, fn, fn, [id])) load(null, id);
 });
 $("#lookup").addEventListener("submit", (e) => { e.preventDefault(); load(e.target.addr.value); });
+document.querySelector("[data-try]").addEventListener("click", (e) => { $("#lookup").addr.value = e.target.dataset.try; load(e.target.dataset.try); });
+document.querySelector("[data-show]").addEventListener("click", (e) => { e.preventDefault(); history.replaceState(null, "", "#attestation-3"); $("#explorer").scrollIntoView({ behavior: "smooth" }); show(3); });
 $("#request").kind.addEventListener("change", (e) => { $("#request").subject.placeholder = { github_repo: "owner/repo", domain: "example.com", web: "https://example.com/about" }[e.target.value]; });
 $("#request").addEventListener("submit", async (e) => {
   e.preventDefault();
@@ -136,12 +239,11 @@ wireWallet(async (a) => {
   $("#mytag").innerHTML = a ? `Your ownership tag: <span class="mono" style="word-break:break-all">genlayer-attest:${esc(a.toLowerCase())}</span>` : "Connect a wallet to see your ownership tag.";
   const id = Number($("#detail").dataset.id); if (!Number.isNaN(id)) show(id);
 });
+addEventListener("scroll", () => $("#nav").classList.toggle("stuck", scrollY > 8), { passive: true });
 load();
 </script>
-
-<footer><div class="w"><span>Built on <a href="https://genlayer.com">GenLayer</a></span><a href="docs.html">Docs</a><a href="https://github.com/cris-the-dev/genlayer-attest">Source</a></div></footer>
 <script>
-document.getElementById("sites").innerHTML=[["01","proofbounty"],["02","proofbounty-v2"],["03","ic-security-audit"],["04","oracle-kit"],["05","workshop"],["06","docs-security"],["07","rainfall-insurance"],["08","dealcourt"],["09","goalstake"],["10","mandateguard"],["11","slabond"],["12","attest"],["13","sponsorpay"],["14","modcourt"]]
+document.getElementById("sites").innerHTML=[["ProofBounty","proofbounty"],["ProofBounty v2","proofbounty-v2"],["IC Security Audit","ic-security-audit"],["Oracle Kit","oracle-kit"],["Workshop","workshop"],["Security Docs","docs-security"],["Rainfall Insurance","rainfall-insurance"],["DealCourt","dealcourt"],["GoalStake","goalstake"],["MandateGuard","mandateguard"],["SLA Bond","slabond"],["Attest","attest"],["SponsorPay","sponsorpay"],["ModCourt","modcourt"]]
  .map(([n,s])=>`<a href="https://${s}.cristhedev.com"${s==="attest"?' aria-current="page"':""}>${n}</a>`).join("");
 </script>
 </body></html>
